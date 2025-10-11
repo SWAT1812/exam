@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>第二期德文段考</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* 預設電腦版樣式 */
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f7f7f7;
+      overflow: hidden;
+      user-select: none;
+    }
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background-color: #fff;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      z-index: 10;
+      font-size: 10px;
+    }
+    .timer {
+      font-weight: bold;
+      color: #d9534f;
+      font-size: 18px;
+    }
+    .container {
+      position: absolute; top: 60px; left: 0; right: 0; bottom: 0;
+      display: flex; justify-content: center; align-items: center;
+      padding: 30px;
+      box-sizing: border-box;
+    }
+    #rules {
+      max-width: 700px;
+      width: 100%;
+      text-align: left;
+      font-size: 18px;
+      line-height: 1.8;
+      background-color: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    #start-btn {
+      margin-top: 20px;
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #28a745;
+      color: white;
+      cursor: pointer;
+      max-width: 300px;
+      width: 100%;
+    }
+    .question-box {
+      background: white; padding: 30px 30px 80px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 800px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      position: relative;
+      font-size: 18px;
+      line-height: 1.5;
+    }
+    .answers label {
+      display: block;
+      margin: 12px 0;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .button-group {
+      position: fixed;
+      bottom: 20px;
+      right: 30px;
+      display: flex;
+      gap: 10px;
+      z-index: 15;
+    }
+    .btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      min-width: 120px;
+    }
+    .btn.hidden { display: none; }
+    #result {
+      margin-top: 30px;
+      background-color: #e8f8e8;
+      padding: 20px;
+      border-radius: 10px;
+      max-height: 60vh;
+      overflow-y: auto;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+    .hidden { display: none; }
+
+    /* 手機響應式 */
+    @media (max-width: 480px) {
+      header {
+        padding: 0 15px;
+        font-size: 18px;
+      }
+      .timer {
+        font-size: 16px;
+      }
+      .container {
+        padding: 15px;
+      }
+      #rules {
+        font-size: 16px;
+        padding: 20px;
+      }
+      #start-btn {
+        font-size: 18px;
+        padding: 16px;
+        max-width: 100%;
+      }
+      .question-box {
+        font-size: 16px;
+        padding: 20px 20px 100px;
+        max-width: 100%;
+      }
+      .answers label {
+        font-size: 16px;
+      }
+      .button-group {
+        bottom: 0;
+        right: 0;
+        left: 0;
+        gap: 8px;
+        padding: 10px;
+        justify-content: space-around;
+        position: fixed;
+        flex-wrap: wrap;
+      }
+      .btn {
+        max-width: none;
+        flex: 1 1 30%;
+        font-size: 16px;
+        padding: 14px 0;
+        min-width: auto;
+      }
+      #result {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body oncontextmenu="return false" onkeydown="return disableKeys(event)">
+  <header>
+    <h1>德語第二期段考</h1>
+    <div class="timer" id="timer">20:00</div>
+  </header>
+
+  <div class="container">
+    <div id="rules">
+      <h2>📜 考試規則</h2>
+      <ul>
+        <li>考試總時間為 20 分鐘，請留意右上角倒數。</li>
+        <li>每題皆為單選題（共有 15 題），可自由前後切題。</li>
+        <li>考試期間禁止切換畫面、離開視窗、參考筆記。</li>
+        <li>完成所有題目後會顯示成績與對錯統計。</li>
+        <li>注意！交卷後請截圖並回報給Vanille！若若未回報則以 0 分計算。</li>
+      </ul>
+      <button id="start-btn">開始考試</button>
+    </div>
+
+    <div class="question-box hidden" id="exam-box">
+      <h2 id="question-text">載入中...</h2>
+      <div class="answers" id="answer-options"></div>
+      <div class="button-group" id="navigation-buttons">
+        <button id="prev-btn" class="btn">上一題</button>
+        <button id="next-btn" class="btn">下一題</button>
+        <button id="finish-btn" class="btn hidden">作答完畢，交卷</button>
+      </div>
+      <div id="result" class="hidden"></div>
+    </div>
+  </div>
+
+  <script>
+     const questions = [
+      {
+        text: "「t___fonieren」橫線處應該填入？",
+        options: ["ale", "ele", "ala", "ela"],
+        correct: 1
+      },
+      {
+        text: "「Musik hören」是什麼意思？",
+        options: ["聽音樂", "唱歌", "創作音樂", "音樂會"],
+        correct: 0
+      },
+      {
+        text: "以下何者是正確的？",
+        options: ["Tischtennis 網球", "Basketball 籃球", "cochen 廚師", "Music 音樂"],
+        correct: 1
+      },
+      {
+        text: "「110」該如何拼寫？",
+        options: ["elf null", "zehn hundert", "ein hundert", "hundert zehn"],
+        correct: 3
+      },
+      {
+        text: "下列哪個是「zwei tausend」？",
+        options: ["20000", "1000", "2000", "10000"],
+        correct: 2
+      },
+      {
+        text: "「In Deutschland spricht man Deutsch」的意思是？",
+        options: ["德語是德國發明的", "在德國的男生", "在德國說德文", "男生說德文"],
+        correct: 2
+      },
+      {
+        text: "「der」是什麼？",
+        options: ["陽性", "陰性", "中性", "男性"],
+        correct: 0
+      },
+      {
+        text: "「die」是什麼？",
+        options: ["陽性", "陰性", "中性", "男性"],
+        correct: 1
+      },
+      {
+        text: "「Bibliothek」是？",
+        options: ["機場", "市政府", "警察局", "圖書館"],
+        correct: 3
+      },
+      {
+        text: "那「Bibliothek」是？",
+        options: ["陰性", "陽性", "中性", "女性"],
+        correct: 0
+      },
+      {
+        text: "下列哪個是「校園」的德文？",
+        options: ["Scuhof", "Sculhof", "Schulhof", "Schulho"],
+        correct: 2
+      },
+      {
+        text: "下列哪個是「Aula」？",
+        options: ["奧迪", "禮堂", "操場", "籃球場"],
+        correct: 1
+      },
+      {
+        text: "Labor 不是哪一門課程會接觸到的地方？",
+        options: ["Biologie", "Physik", "Chemisch (化學)", "Geografie"],
+        correct: 3
+      },
+      {
+        text: "下列哪個是「藝術」的德文？",
+        options: ["Kunst", "art", "Kochen", "Klass"],
+        correct: 0
+      },
+      {
+        text: "下列哪個是正確的「運動」拼法？",
+        options: ["Sportik", "Sportish", "Spors", "Sport"],
+        correct: 3
+      },
+      // 可自行新增題目
+    ];
+
+    let current = 0;
+    const userAnswers = JSON.parse(localStorage.getItem("userAnswers") || "[]");
+    const questionText = document.getElementById("question-text");
+    const answerOptions = document.getElementById("answer-options");
+    const prevBtn = document.getElementById("prev-btn");
+    const nextBtn = document.getElementById("next-btn");
+    const finishBtn = document.getElementById("finish-btn");
+    const resultBox = document.getElementById("result");
+    const timerDisplay = document.getElementById("timer");
+    const rules = document.getElementById("rules");
+    const examBox = document.getElementById("exam-box");
+    const startBtn = document.getElementById("start-btn");
+    const navigationButtons = document.getElementById("navigation-buttons");
+
+    let remainingSeconds = 1200;
+    let interval;
+    let blurCount = 0;
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, "0");
+      const s = (sec % 60).toString().padStart(2, "0");
+      return `${m}:${s}`;
+    }
+
+    function startTimer() {
+      interval = setInterval(() => {
+        remainingSeconds--;
+        timerDisplay.textContent = formatTime(remainingSeconds);
+        if (remainingSeconds <= 0) {
+          clearInterval(interval);
+          showResults(true);
+        }
+      }, 1000);
+    }
+
+    function loadQuestion() {
+      const q = questions[current];
+      questionText.textContent = `第 ${current + 1} 題：${q.text}`;
+      answerOptions.innerHTML = "";
+      q.options.forEach((opt, i) => {
+        const checked = userAnswers[current] === i ? "checked" : "";
+        answerOptions.innerHTML += `<label><input type="radio" name="answer" value="${i}" ${checked}> ${opt}</label>`;
+      });
+      prevBtn.disabled = current === 0;
+      nextBtn.classList.toggle("hidden", current === questions.length - 1);
+      finishBtn.classList.toggle("hidden", current !== questions.length - 1);
+      resultBox.classList.add("hidden");
+    }
+
+    function saveAnswer() {
+      const selected = document.querySelector('input[name="answer"]:checked');
+      if (selected) {
+        userAnswers[current] = parseInt(selected.value);
+        localStorage.setItem("userAnswers", JSON.stringify(userAnswers));
+      }
+    }
+
+    function showResults(force = false) {
+      saveAnswer();
+      clearInterval(interval);
+      navigationButtons.classList.add("hidden");
+      timerDisplay.textContent = "考試結束";
+      prevBtn.classList.add("hidden");
+      nextBtn.classList.add("hidden");
+      finishBtn.classList.add("hidden");
+
+      if (!force) {
+        const unanswered = questions.findIndex((_, i) => userAnswers[i] === undefined);
+        if (unanswered !== -1) {
+          const confirmSubmit = confirm("⚠️ 尚有未作答的題目，是否確定要交卷？");
+          if (!confirmSubmit) {
+            navigationButtons.classList.remove("hidden");
+            prevBtn.classList.remove("hidden");
+            nextBtn.classList.remove("hidden");
+            finishBtn.classList.remove("hidden");
+            startTimer();
+            return;
+          }
+        }
+      }
+
+      let score = 0;
+      let output = "";
+      questions.forEach((q, i) => {
+        const userAns = userAnswers[i];
+        const correct = q.correct;
+        const isCorrect = userAns === correct;
+        if (isCorrect) score++;
+        output += `第 ${i + 1} 題：${q.text}<br>`;
+        output += `你的答案：${userAns !== undefined ? q.options[userAns] : "未作答"}<br>`;
+        output += `正確答案：${q.options[correct]}<br>`;
+        output += `<strong style="color:${isCorrect ? 'green' : 'red'};">${isCorrect ? "✔ 答對" : "✘ 答錯"}</strong><br><br>`;
+      });
+      resultBox.innerHTML = `<h3>你總共答對 ${score} / ${questions.length} 題</h3><br>${output}`;
+      resultBox.classList.remove("hidden");
+      questionText.textContent = "考試結束";
+      answerOptions.innerHTML = "";
+      localStorage.removeItem("userAnswers");
+    }
+
+    prevBtn.onclick = () => {
+      saveAnswer();
+      if (current > 0) current--;
+      loadQuestion();
+    };
+
+    nextBtn.onclick = () => {
+      saveAnswer();
+      if (current < questions.length - 1) current++;
+      loadQuestion();
+    };
+
+    finishBtn.onclick = () => {
+      saveAnswer();
+      showResults();
+    };
+
+    startBtn.onclick = () => {
+      rules.classList.add("hidden");
+      examBox.classList.remove("hidden");
+      loadQuestion();
+      startTimer();
+
+      blurCount = 0;
+      window.addEventListener("blur", () => {
+        blurCount++;
+        if (blurCount === 1) {
+          showNotice("⚠️ 警告！偵測到你切換視窗，再切一次將自動交卷！");
+        } else if (blurCount === 2) {
+          showNotice("❌ 第二次切換視窗，系統自動交卷。");
+          showResults(true);
+        }
+      });
+    };
+
+    function showNotice(msg) {
+      const box = document.createElement("div");
+      box.textContent = msg;
+      box.style.position = "fixed";
+      box.style.top = "70px";
+      box.style.left = "50%";
+      box.style.transform = "translateX(-50%)";
+      box.style.padding = "10px 20px";
+      box.style.background = "#fff3cd";
+      box.style.border = "1px solid #ffeeba";
+      box.style.color = "#856404";
+      box.style.zIndex = "9999";
+      box.style.borderRadius = "8px";
+      document.body.appendChild(box);
+      setTimeout(() => box.remove(), 5000);
+    }
+
+    function disableKeys(e) {
+      if (e.key === "F12" ||
+          (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "i") ||
+          (e.ctrlKey && e.key.toLowerCase() === "c")) {
+        e.preventDefault();
+        return false;
+      }
+    }
+  </script>
+</body>
+</html>
